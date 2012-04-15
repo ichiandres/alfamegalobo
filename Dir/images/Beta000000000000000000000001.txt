@@ -1,0 +1,140 @@
+<%-- 
+    Document   : index
+    Created on : Apr 13, 2012, 10:40:37 PM
+    Author     : Andres Mauricio R
+--%>
+
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <script  type="text/javascript">
+            
+            // nos marca los pulsos del juego
+            window.requestAnimFrame = (function () {
+                return  window.requestAnimationFrame        ||
+                    window.webkitRequestAnimationFrame  ||
+                    window.mozRequestAnimationFrame     ||
+                    window.oRequestAnimationFrame       ||
+                    window.msRequestAnimationFrame      ||
+                    function ( /* function */ callback, /* DOMElement */ element) {
+                        window.setTimeout(callback, 1000 / 60);
+                    };
+            })();
+            arrayRemove = function (array, from) {
+                var rest = array.slice((from) + 1 || array.length);
+                array.length = from < 0 ? array.length + from : from;
+                return array.push.apply(array, rest);
+            };
+
+
+            //Especifica el comportamiento del jugo como un Objeto
+            var game = (function () {
+                // Variables globales a la aplicacion
+                var canvas,
+                    ctx,
+                    buffer,
+                    bufferctx,
+                    player,
+                    evil,
+                    playerShot,
+                    bgMain,
+                    bgBoss,
+                    evilSpeed = 1,
+                    totalEvils = 7,
+                    playerLife = 3,
+                    shotSpeed = 5,
+                    playerSpeed = 5,
+                    evilCounter = 0,
+                    youLoose = false,
+                    congratulations = false,
+                    minHorizontalOffset = 100,
+                    maxHorizontalOffset = 400,
+                    evilShots = 5,   // disparos que tiene el malo al principio
+                    evilLife = 3,    // vidas que tiene el malo al principio (se van incrementando)
+                    finalBossShots = 30,
+                    finalBossLife = 12,
+                    totalBestScoresToShow = 5, // las mejores puntuaciones que se mostraran
+                    playerShotsBuffer = [],
+                    evilShotsBuffer = [],
+                    keyPressed = {},
+                    keyMap = {
+                        left: 37,
+                        right: 39,
+                        fire: 32     // tecla espacio
+                    },
+                    nextPlayerShot = 0,
+                    playerShotDelay = 250,
+                    now = 0;
+
+
+                function loop() {
+                        update();
+                        draw();
+                }
+
+                function init() {
+                    canvas = document.getElementById('canvas');
+                    ctx = canvas.getContext("2d");
+
+                    buffer = document.createElement('canvas');
+                    buffer.width = canvas.width;
+                    buffer.height = canvas.height;
+                    bufferctx = buffer.getContext('2d');
+
+                    player = new Player(playerLife, 0);
+                    
+                    function anim () {
+                        loop();
+                        requestAnimFrame(anim);
+                    }
+                    anim();
+
+                }
+
+
+                function Player(life, score) {
+                    
+                    player = new Image();
+                    player.src = 'http://andres123.comze.com/nave.png';
+                    player.posX = (canvas.width / 2) - (player.width / 2);
+                    player.posY = (canvas.width / 2) - (player.width / 2);
+                    player.life = life;
+                    player.score = score;
+                    player.dead = false;
+                    player.speed = playerSpeed;
+
+                }
+
+                function update() {
+
+                        drawBackground();
+
+                        bufferctx.drawImage(player, player.posX, player.posY);
+                    }
+
+                function draw() {
+                        ctx.drawImage(buffer, 0, 0);
+                }
+                
+                function drawBackground() {
+                    var background;
+                    
+                    bufferctx.drawImage(background, 0, 0);
+                }
+
+
+
+            })();
+
+        </script>
+    </head>
+    
+    
+    <body onload="game.init()">
+        <canvas id="canvas" width="600" height="600">
+            
+        </canvas>
+    </body>
+</html>

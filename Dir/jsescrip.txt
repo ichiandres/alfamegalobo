@@ -1,0 +1,244 @@
+  // nos marca los pulsos del juego
+            window.requestAnimFrame = (function () {
+                return window.requestAnimationFrame ||
+                    window.webkitRequestAnimationFrame ||
+                    window.mozRequestAnimationFrame ||
+                    window.oRequestAnimationFrame ||
+                    window.msRequestAnimationFrame ||
+                    function ( /* function */ callback, /* DOMElement */ element) {
+                        window.setTimeout(callback, 1000 / 60);
+                    };
+            })();
+            arrayRemove = function (array, from) {
+                var rest = array.slice((from) + 1 || array.length);
+                array.length = from < 0 ? array.length + from : from;
+                return array.push.apply(array, rest);
+            };
+
+            var game = (function () {
+
+                // Variables globales a la aplicacion
+                var canvas,
+                    ctx,
+                    buffer,
+                    bufferctx,
+                    //Inicializacion de las variables globales de la Nave de nuestro juego
+                    nave,
+                    playerLife = 3,
+                    playerSpeed = 5,
+                    
+                    imagenFondo,
+                    bgBoss,
+                    
+                    
+                    
+                    youLoose = false,
+                    congratulations = false,
+                   
+                    keyPressed = {},
+                    keyMap = {
+                        left: 37,
+                        right: 39,
+                        fire: 32 // tecla espacio
+                    },
+                    now = 0;
+
+                function loop() {
+                    update();
+                    draw();
+                }
+
+                function init() {
+
+
+                    canvas = document.getElementById('canvas');
+                    ctx = canvas.getContext("2d");
+
+                    buffer = document.createElement('canvas');
+                    buffer.width = canvas.width;
+                    buffer.height = canvas.height;
+                    bufferctx = buffer.getContext('2d');
+
+                    imagenFondo = new Image();
+                    imagenFondo.src = 'images/fondovertical.png';
+
+                    bgBoss = new Image();
+                    bgBoss.src = 'images/fondovertical_jefe.png';
+
+                    nave = new Nave(playerLife, 0);
+
+                    addListener(document, 'keydown', keyDown);
+                    addListener(document, 'keyup', keyUp);
+
+                    function anim () {
+                        loop();
+                        requestAnimFrame(anim);
+                    }
+                    anim();
+                }
+
+
+                function Nave(life, score) {
+                    nave = new Image();
+                    nave.src = 'images/bueno.png';
+                    nave.posX = (canvas.width / 2) - (nave.width / 2);
+                    nave.posY =  (canvas.height/23) + 20*(canvas.height/23);
+                    nave.life = life;
+                    nave.score = score;
+                    nave.dead = false;
+                    nave.speed = playerSpeed;
+                    nave.doAnything = function() {
+                        if (nave.dead)
+                            return;
+                        if (keyPressed.left && nave.posX > 5)
+                            nave.posX -= nave.speed;
+                        if (keyPressed.right && nave.posX < (canvas.width - nave.width - 5))
+                            nave.posX += nave.speed; 
+                    };
+                    return nave;
+                }
+
+                /******************************* DISPAROS *******************************/
+
+
+
+
+
+                function playerAction() {
+                    nave.doAnything();
+                }
+
+                function addListener(element, type, expression, bubbling) {
+                    bubbling = bubbling || false;
+
+                    if (window.addEventListener) { // Standard
+                        element.addEventListener(type, expression, bubbling);
+                    } else if (window.attachEvent) { // IE
+                        element.attachEvent('on' + type, expression);
+                    }
+                }
+
+                function keyDown(e) {
+                    var key = (window.event ? e.keyCode : e.which);
+                    for (var inkey in keyMap) {
+                        if (key === keyMap[inkey]) {
+                            e.preventDefault();
+                            keyPressed[inkey] = true;
+                        }
+                    }
+                }
+
+                function keyUp(e) {
+                    var key = (window.event ? e.keyCode : e.which);
+                    for (var inkey in keyMap) {
+                        if (key === keyMap[inkey]) {
+                            e.preventDefault();
+                            keyPressed[inkey] = false;
+                        }
+                    }
+                }
+
+                function draw() {
+                    ctx.drawImage(buffer, 0, 0);
+                }
+
+                function showGameOver() {
+                    bufferctx.fillStyle="rgb(255,0,0)";
+                    bufferctx.font="bold 35px Arial";
+                    bufferctx.fillText("GAME OVER", canvas.width / 2 - 100, canvas.height / 2);
+                }
+
+                function showCongratulations () {
+                    bufferctx.fillStyle="rgb(204,50,153)";
+                    bufferctx.font="bold 22px Arial";
+                    bufferctx.fillText("Enhorabuena, te has pasado el juego!", canvas.width / 2 - 200, canvas.height / 2 - 30);
+                    bufferctx.fillText("PUNTOS: " + nave.score, canvas.width / 2 - 200, canvas.height / 2);
+                    bufferctx.fillText("VIDAS: " + nave.life + " x 5", canvas.width / 2 - 200, canvas.height / 2 + 30);
+                    bufferctx.fillText("PUNTUACION TOTAL: " + getTotalScore(), canvas.width / 2 - 200, canvas.height / 2 + 60);
+                }
+
+                function getTotalScore() {
+                    return nave.score + nave.life * 5;
+                }
+
+                function update() {
+
+                    drawBackground();
+
+                    if (congratulations) {
+                        showCongratulations();
+                        return;
+                    }
+
+                    if (youLoose) {
+                        showGameOver();
+                        return;
+                    }
+
+                    bufferctx.drawImage(nave, nave.posX, nave.posY);
+                    playerAction();
+                }
+
+
+
+                function drawBackground() {
+                    var background  = imagenFondo
+                    bufferctx.drawImage(background, 0, 0);
+                }
+
+
+                /******************************* MEJORES PUNTUACIONES (LOCALSTORAGE) *******************************/
+
+
+                function clearList(list) {
+                    list.innerHTML = '';
+                    addListElement(list, "Fecha");
+                    addListElement(list, "Puntos");
+                }
+
+                function addListElement(list, content, className) {
+                    var element = document.createElement('li');
+                    if (className) {
+                        element.setAttribute("class", className);
+                    }
+                    element.innerHTML = content;
+                    list.appendChild(element);
+                }
+
+function dibujar() {
+    if (direccionX == 0){
+        posX++;
+		if(direccionY == 2)
+        posY++;
+		else if(direccionY == 3)
+        posY--;
+	}
+    else if(direccionX == 1){
+        posX--;
+		if(direccionY == 2)
+        posY++;
+		else if(direccionY == 3)
+        posY--;
+	}
+if (posX==350)
+        direccionX = 1;
+    if (posX==0)
+        direccionX = 0;
+	if (posY==0)
+        direccionY = 2;
+	if (posY==150)
+        direccionY = 3;
+	//Creo una imagen con un objeto Image de Javascript
+    var img = new Image();
+    //indico la URL de la imagen
+    img.src = 'pelota.png';
+    canvas.width = canvas.width; // limpia el canvas
+    bufferctx.drawImage(img, posX, posY);
+}
+
+                /******************************* FIN MEJORES PUNTUACIONES *******************************/
+
+                return {
+                    init: init
+                }
+            })();
